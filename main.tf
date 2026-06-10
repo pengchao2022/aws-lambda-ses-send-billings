@@ -8,6 +8,6 @@ module "lambda" {
   function_name   = "lambda-ses-function"
   sender_email    = "pengchao.ma6@gmail.com"
   recipient_email = "prometheus_0521@qq.com"
-  schedule_expression = "cron(0/2 * * * ? *)"
+  schedule_expression = "cron(0 13 * * ? *)" # everyday afternoon at 1:00 PM 
   zip_path            = "${path.root}/lambda_payload.zip"
 }
