@@ -20,17 +20,20 @@ variable "schedule_expression" {
 variable "sender_email" {
   type = string
   description = "The email address of the sender"
+  default = "pengchao.ma6@gmail.com"
   
 }
 
 variable "recipient_email" {
   type = string
   description = "The email address of the receiver"
+  default = "prometheus_0521@qq.com"
   
 }
 
 variable "function_name" {
   type = string
   description = "The name of Lambda function"
+  default = "lambda-ses-function"
   
 }

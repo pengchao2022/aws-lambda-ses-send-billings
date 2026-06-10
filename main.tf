@@ -5,9 +5,9 @@ module "ses" {
 
 module "lambda" {
   source          = "./modules/lambda"
-  function_name   = "my-automation-lambda"
-  sender_email    = module.ses.verified_email
+  function_name   = "lambda-ses-function"
+  sender_email    = "pengchao.ma6@gmail.com"
   recipient_email = "prometheus_0521@qq.com"
-  schedule_expression = var.schedule_expression
+  schedule_expression = "cron(0/2 * * * ? *)"
   zip_path            = "${path.root}/lambda_payload.zip"
 }
