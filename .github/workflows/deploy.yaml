@@ -1,0 +1,51 @@
+name: Deploy SES Lambda
+
+
+on:
+  pull_request:
+    types:
+      - closed
+
+    paths:
+      - '**/*.tf'
+      - 'lambda_function.py'
+      - '.github/workflows/deploy.yaml'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy-ses-lambda:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Create ZIP archive
+        run: |
+          zip -j lambda_payload.zip lambda_function.py   # The `-j` parameter means "no path," meaning you should place `lambda_function.py` directly at the root of the compressed file. This way, Lambda can directly find `lambda_function.lambda_handler`
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4 
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terrafrom@v3
+        with:
+          terraform_version: "1.9.0"
+
+      - name: Terraform Init
+        run: terraform init 
+
+      - name: Terraform Plan
+        run: terraform plan -input=false
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve -input=false 
+
+
