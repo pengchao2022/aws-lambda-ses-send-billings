@@ -73,7 +73,7 @@ resource "aws_scheduler_schedule" "this" {
 }
 
 
-# 2. 新的组合策略 (替换掉原来的 ses_send 和 cost_explorer_policy)
+# create policy for send_email and aws cost explorer
 resource "aws_iam_policy" "lambda_combined_policy" {
   name = "lambda_ses_ce_policy"
   policy = jsonencode({
@@ -93,7 +93,7 @@ resource "aws_iam_policy" "lambda_combined_policy" {
   })
 }
 
-# 3. 将新策略绑定到 Lambda Role
+# attach the policy to lambda role
 resource "aws_iam_role_policy_attachment" "attach_combined_policy" {
   role       = aws_iam_role.iam_for_lambda.name
   policy_arn = aws_iam_policy.lambda_combined_policy.arn
