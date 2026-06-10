@@ -10,7 +10,6 @@ CONFIG = {
 }
 
 def get_billing_data_html():
-    """获取账单并返回 HTML 列表格式"""
     ce = boto3.client('ce', region_name='us-east-1')
     end = datetime.now().strftime('%Y-%m-%d')
     start = (datetime.now() - timedelta(days=2)).strftime('%Y-%m-%d')
@@ -27,9 +26,14 @@ def get_billing_data_html():
         service = result['Keys'][0]
         amount = float(result['Metrics']['UnblendedCost']['Amount'])
         if amount > 0:
-            report_html += f"<li><strong>{service}</strong>: ${amount:.2f}</li>"
+            # 加入一点点颜色区分，金额大的用加粗
+            report_html += f"""
+            <li style="margin-bottom: 8px;">
+                <span style="color: #555;">{service}</span>: 
+                <strong style="color: #232f3e;">${amount:.2f}</strong>
+            </li>"""
             
-    return report_html if report_html else "<li>昨日无产生新费用。</li>"
+    return report_html if report_html else "<li><em>昨日无产生新费用。</em></li>"
 
 def lambda_handler(event, context):
     expiry_date = datetime.strptime(CONFIG["expiry_date"], '%Y-%m-%d')
@@ -38,30 +42,31 @@ def lambda_handler(event, context):
     try:
         usage_details_html = get_billing_data_html()
         
-        # HTML 邮件模板
+        # 带有 AWS 品牌风格的 HTML 模板
         html_body = f"""
         <html>
-        <head>
-            <style>
-                body {{ font-family: 'Segoe UI', Arial, sans-serif; color: #333; }}
-                .card {{ border: 1px solid #ddd; padding: 20px; border-radius: 8px; max-width: 500px; }}
-                .header {{ color: #232f3e; border-bottom: 2px solid #ff9900; }}
-                .summary {{ background-color: #f8f8f8; padding: 10px; border-radius: 5px; margin: 15px 0; }}
-                ul {{ padding-left: 20px; }}
-                li {{ margin: 5px 0; }}
-            </style>
-        </head>
-        <body>
-            <div class="card">
-                <h2 class="header">AWS 每日费用监控报告</h2>
-                <div class="summary">
-                    <p><strong>剩余抵扣额度:</strong> ${CONFIG["credits_remaining"]:.2f}</p>
-                    <p><strong>预计有效期剩余:</strong> {days_remaining} 天 (至 {CONFIG["expiry_date"]})</p>
+        <body style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
+            <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-top: 4px solid #ff9900; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                <div style="padding: 20px; background-color: #232f3e; color: #ffffff;">
+                    <h2 style="margin: 0;">AWS 每日费用监控报告</h2>
                 </div>
-                <h3>昨日费用明细:</h3>
-                <ul>{usage_details_html}</ul>
-                <hr>
-                <p style="font-size: 12px; color: #777;">此报告由 AWS Lambda 自动化监控生成。</p>
+                
+                <div style="padding: 30px;">
+                    <h3 style="color: #232f3e; margin-top: 0;">账户额度概况</h3>
+                    <div style="background-color: #fff8f0; border-left: 4px solid #ff9900; padding: 15px; margin-bottom: 20px;">
+                        <p style="margin: 5px 0;"><strong>剩余抵扣额度:</strong> <span style="color: #d13212; font-size: 1.2em;">${CONFIG["credits_remaining"]:.2f}</span></p>
+                        <p style="margin: 5px 0;"><strong>有效期剩余:</strong> {days_remaining} 天 (至 {CONFIG["expiry_date"]})</p>
+                    </div>
+
+                    <h3 style="color: #232f3e;">昨日费用明细</h3>
+                    <ul style="list-style-type: none; padding: 0;">
+                        {usage_details_html}
+                    </ul>
+                </div>
+                
+                <div style="padding: 15px; background-color: #f9f9f9; text-align: center; font-size: 12px; color: #888;">
+                    此报告由 AWS Lambda 自动监控生成 | 建议定期登录 AWS 控制台查看明细
+                </div>
             </div>
         </body>
         </html>
@@ -72,8 +77,8 @@ def lambda_handler(event, context):
             Source=CONFIG["sender"],
             Destination={'ToAddresses': [CONFIG["recipient"]]},
             Message={
-                'Subject': {'Data': 'AWS 每日费用报告'},
-                'Body': {'Html': {'Data': html_body}} # 关键：将 Body 设为 Html
+                'Subject': {'Data': 'AWS 每日费用监控报告'},
+                'Body': {'Html': {'Data': html_body}}
             }
         )
         
