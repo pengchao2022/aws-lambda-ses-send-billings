@@ -1,4 +1,4 @@
-# 1. IAM Role & Logs
+# iam role
 resource "aws_iam_role" "iam_for_lambda" {
   name = "${var.function_name}_role"
   assume_role_policy = jsonencode({
@@ -12,21 +12,15 @@ resource "aws_iam_role_policy_attachment" "lambda_logs" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
-resource "aws_iam_role_policy" "ses_send" {
-  role = aws_iam_role.iam_for_lambda.id
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{ Action = ["ses:SendEmail", "ses:SendRawEmail"], Effect = "Allow", Resource = "*" }]
-  })
-}
 
-# 2. CloudWatch Log Group
+
+# cloudWatch log group
 resource "aws_cloudwatch_log_group" "log_group" {
   name              = "/aws/lambda/${var.function_name}"
   retention_in_days = 7
 }
 
-# 3. Lambda Function
+# lambda function
 resource "aws_lambda_function" "func" {
   filename      = "lambda_payload.zip"
   function_name = var.function_name
@@ -77,3 +71,32 @@ resource "aws_scheduler_schedule" "this" {
     role_arn = aws_iam_role.scheduler_role.arn
   }
 }
+
+
+# 2. 新的组合策略 (替换掉原来的 ses_send 和 cost_explorer_policy)
+resource "aws_iam_policy" "lambda_combined_policy" {
+  name = "lambda_ses_ce_policy"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action   = ["ses:SendEmail", "ses:SendRawEmail"],
+        Effect   = "Allow",
+        Resource = "*"
+      },
+      {
+        Action   = ["ce:GetCostAndUsage"],
+        Effect   = "Allow",
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+# 3. 将新策略绑定到 Lambda Role
+resource "aws_iam_role_policy_attachment" "attach_combined_policy" {
+  role       = aws_iam_role.iam_for_lambda.name
+  policy_arn = aws_iam_policy.lambda_combined_policy.arn
+}
+
+
