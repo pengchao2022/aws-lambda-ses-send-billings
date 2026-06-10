@@ -3,17 +3,17 @@ import os
 
 def lambda_handler(event, context):
     ses = boto3.client('ses')
-    print("准备发送邮件...")
+    print("Preparing to send email...")
     try:
         ses.send_email(
             Source=os.environ['SENDER'],
             Destination={'ToAddresses': [os.environ['RECIPIENT']]},
             Message={
-                'Subject': {'Data': '定时通知'},
-                'Body': {'Text': {'Data': '这是一条来自 Lambda 的定时测试消息。'}}
+                'Subject': {'Data': 'AWS payment notification'},
+                'Body': {'Text': {'Data': 'Hello , Your need to pay your credit card immedately!!'}}
             }
         )
-        print("邮件已成功发送")
+        print("email sent successfully!")
     except Exception as e:
-        print(f"发送失败: {str(e)}")
+        print(f"failed to send: {str(e)}")
         raise e
