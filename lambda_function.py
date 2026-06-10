@@ -1,7 +1,6 @@
 import boto3
 from datetime import datetime, timedelta
 
-# --- 集中配置区域 ---
 CONFIG = {
     "credits_remaining": 83.62,
     "expiry_date": "2026-11-30",
